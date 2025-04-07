@@ -72,7 +72,7 @@ def run_MaxInstPower(folder_path,start_cutoff=50, end_cutoff=215, baseline_cutof
 
         # sample_file = [f for f in os.listdir(filename) if len(filename) >= 22 and filename[18:21] == "149"]
 
-        for f in os.listdir(name):
+        for f in os.listdir(full_path):
             if len(f) >= 22 and f[18:21] == "149":
                 before_149 = os.path.join(full_path, f.split("149")[0])
                 after_149 = f.split("149")[1]

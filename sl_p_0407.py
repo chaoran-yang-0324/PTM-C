@@ -77,16 +77,16 @@ def run_MaxInstPower(folder_path,start_cutoff=50, end_cutoff=215, baseline_cutof
                 before_149 = os.path.join(full_path, f.split("149")[0])
                 after_149 = f.split("149")[1]
 
-        for i in range(0,150): 
-            act = MaxInstPower(os.path.join(before_149,str(i),after_149))/e
-            outputs[q].append(act)
+                for i in range(0,150): 
+                    act = MaxInstPower(before_149+str(i)+after_149)/e
+                    outputs[q].append(act)
 
-            ax.plot(x_coord, np.array(outputs[q]), label=f"{name}")
-            ax.set_xlabel('Contraction Index')
-            ax.set_ylabel('Normalized Power (W/kg)')
-            ax.set_title('Peak Power')
-            ax.legend()
-            ax.grid()
+                    ax.plot(x_coord, np.array(outputs[q]), label=f"{name}")
+                    ax.set_xlabel('Contraction Index')
+                    ax.set_ylabel('Normalized Power (W/kg)')
+                    ax.set_title('Peak Power')
+                    ax.legend()
+                    ax.grid()
         q=q+1
     # np.savetxt("name.csv", outputs, delimiter=",", fmt='%s')
 

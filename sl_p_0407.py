@@ -116,6 +116,6 @@ end_cutoff = st.number_input("End Cutoff:", min_value=start_cutoff+1, value=215,
 baseline_cutoff = st.number_input("Baseline Cutoff:", min_value=0, value=45, step=1)
 
 if st.button("Run Analysis"):
-    fig = run_MaxInstPower(uploaded_zip,start_cutoff,end_cutoff,baseline_cutoff)
+    fig = run_MaxInstPower(unzip_folder,start_cutoff,end_cutoff,baseline_cutoff)
     st.pyplot(fig)
 

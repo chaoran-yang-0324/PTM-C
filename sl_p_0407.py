@@ -53,7 +53,7 @@ def run_MaxInstPower(folder_path,start_cutoff=50, end_cutoff=215, baseline_cutof
     fig, ax = plot.subplots(figsize=(11, 8))
 
     for q, filename in enumerate(os.listdir(folder_path), start=0): 
-        excel_files = [f for f in os.listdir(filename) if f.endswith(".xlsx") or f.endswith(".xls")]
+        excel_files = [f for f in os.listdir(filename) if (f.endswith(".xlsx") or f.endswith(".xls")) and "__MACOSX" not in f]
         if excel_files:
             excel_path = pd.read_excel(os.path.join(filename, excel_files[0]), sheet_name=0, header=None)
             e=excel_path.iloc[6,1]*0.001 # mass(kg)
@@ -101,8 +101,13 @@ if uploaded_zip:
     # Unzip the file to a folder
     unzip_folder = os.path.join(upload_folder, uploaded_zip.name.split('.')[0])
 
-    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        zip_ref.extractall(unzip_folder)
+    # with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        # zip_ref.extractall(unzip_folder)
+
+    with zipfile.ZipFile(uploaded_zip, 'r') as zip_ref:
+        for member in zip_ref.namelist():
+            if '__MACOSX' not in member:
+                zip_ref.extract(member, unzip_folder)
 
     # st.write(f"Contents of {unzip_folder}:")
     # st.write(os.listdir(unzip_folder))  # Display contents

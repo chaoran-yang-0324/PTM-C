@@ -109,7 +109,7 @@ st.title("Peak Power Analysis")
 
 uploaded_zip = st.file_uploader("Upload a .zip file", type="zip")
 
-st.markdown("""
+folder_structure = """
 The folder you upload should be in the format: 
     name_of_folder.zip
       |
@@ -125,31 +125,11 @@ The folder you upload should be in the format:
            |
             -> ...
        -> ...
+"""
 
-Every 'Mouse ID' folder should consist of '.ddf' contraction files AND an excel datasheet with tissue information.
-""")
+st.markdown(folder_structure)
 
-'''''
-st.write(
-    "The folder you upload should be in the format: "
-    "name_of_folder.zip"
-    "  |"
-    "   -> M2034"
-    "       |"
-    "        -> ___.ddf"
-    "        -> ..."
-    "        -> ___.xlsx"
-    "   -> M2035"
-    "       |"
-    "        -> ..."
-    "   -> M2036"
-    "       |"
-    "        -> ..."
-    "   -> ..."
-    " "
-    "Every 'Mouse ID' folder should consist of '.ddf' contraction files AND an excel datasheet with tissue information."
-)
-'''''
+st.markdown("Every 'Mouse ID' folder should consist of '.ddf' contraction files AND an excel datasheet with tissue information.")
 
 if uploaded_zip:
     # Define the folder where we will save the uploaded file

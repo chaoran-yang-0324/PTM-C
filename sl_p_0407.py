@@ -123,13 +123,15 @@ if uploaded_zip:
     # with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
         # zip_ref.extractall(unzip_folder)
 
-    with zipfile.ZipFile(uploaded_zip, 'r') as zip_ref:
-        for member in zip_ref.namelist():
-            if '__MACOSX' not in member:
-                zip_ref.extract(member, unzip_folder)
+    # with zipfile.ZipFile(uploaded_zip, 'r') as zip_ref:
+        # for member in zip_ref.namelist():
+            # if '__MACOSX' not in member:
+                # zip_ref.extract(member, unzip_folder)
 
-    # st.write(f"Contents of {unzip_folder}:")
-    # st.write(os.listdir(unzip_folder))  # Display contents
+    unzip_folder = os.path.join(unzip_folder, uploaded_zip.name.split('.')[0])
+
+    st.write(f"Contents of {unzip_folder}:")
+    st.write(os.listdir(unzip_folder))  # Display contents
 
     # You can now loop through the contents of the folder
     # for filename in os.listdir(unzip_folder):

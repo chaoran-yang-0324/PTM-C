@@ -64,8 +64,12 @@ def run_MaxInstPower(folder_path,start_cutoff=50, end_cutoff=215, baseline_cutof
         # Only look inside folders (skip .zip files or __MACOSX)
         if os.path.isdir(mouse_files):
             for f in os.listdir(mouse_files):
-                if f.endswith(".xlsx") or f.endswith(".xls"):
+                if f.lower().endswith(".xlsx") or f.lower().endswith(".xls"):
                     excel_files.append(os.path.join(mouse_files, f))
+        files = os.listdir(mouse_files)
+        print("Files in mouse_files (", mouse_files, ") are:")
+        for f in files:
+            print(f)
 
         if excel_files:
             excel_path = pd.read_excel(excel_files[0], sheet_name=0, header=None)

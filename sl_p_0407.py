@@ -18,7 +18,7 @@ import streamlit as st
 # In[8]:
 
 
-def run_MaxInstPower(folder_path,start_cutoff=50, end_cutoff=215, baseline_cutoff=45):
+def run_MaxInstPower(folder_path, num_mice, start_cutoff=50, end_cutoff=215, baseline_cutoff=45):
 
     def MaxInstPower(file_path):
         df = pd.read_csv(file_path, delimiter='\t',skiprows=32, usecols=[0, 1, 2])
@@ -47,7 +47,7 @@ def run_MaxInstPower(folder_path,start_cutoff=50, end_cutoff=215, baseline_cutof
     num_folders = len(os.listdir(folder_path))
 
     outputs = []
-    for _ in range(num_folders):
+    for _ in range(num_mice):
         outputs.append([])
 
     x_coord = np.linspace(0,149,num=150)
@@ -135,11 +135,12 @@ if uploaded_zip:
     # for filename in os.listdir(unzip_folder):
         # st.write(filename)
 
+num_mice = st.number_input("Total Number of Animals:", min_value=0, step=1)
 start_cutoff = st.number_input("Start Cutoff:", min_value=0, value=50, step=1)
 end_cutoff = st.number_input("End Cutoff:", min_value=start_cutoff+1, value=215, step=1)
 baseline_cutoff = st.number_input("Baseline Cutoff:", min_value=0, value=45, step=1)
 
 if st.button("Run Analysis"):
-    fig = run_MaxInstPower(unzip_folder,start_cutoff,end_cutoff,baseline_cutoff)
+    fig = run_MaxInstPower(unzip_folder,num_mice,start_cutoff,end_cutoff,baseline_cutoff)
     st.pyplot(fig)
 

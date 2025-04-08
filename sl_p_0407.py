@@ -9,6 +9,7 @@ import matplotlib.pyplot as plot
 import numpy as np
 import os
 import zipfile
+import re
 
 import streamlit as st
 
@@ -44,7 +45,11 @@ def run_MaxInstPower(folder_path, num_mice, start_cutoff=50, end_cutoff=215, bas
 
         return (max_power)
 
-    num_folders = len(os.listdir(folder_path))
+    # Custom sort function to sort files naturally (alphabet first, then numerically)
+    def natural_sort_key(s):
+        return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
+
+    # sorted_files = sorted(files, key=natural_sort_key)
 
     outputs = []
     for _ in range(num_mice):
@@ -75,7 +80,8 @@ def run_MaxInstPower(folder_path, num_mice, start_cutoff=50, end_cutoff=215, bas
             else:
                 print("No Excel files found in "+mouse_files)
 
-            for f in os.listdir(mouse_files):
+            sorted_files = sorted(os.listdir(mouse_files), key=natural_sort_key)
+            for f in sorted_files:
                 if not (f.lower().endswith(".xlsx") or f.lower().endswith(".xls")):
                     ddf_files = os.path.join(mouse_files, f)
                     act = MaxInstPower(ddf_files)/e

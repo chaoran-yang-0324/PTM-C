@@ -59,6 +59,7 @@ def run_MaxInstPower(folder_path, num_mice, start_cutoff=50, end_cutoff=215, bas
     # Loop through the contents of the folder
     for name in os.listdir(folder_path):
         if os.path.isdir(name):
+            print("processing "+name+" ...")
             excel_files = []
             mouse_files = os.path.join(folder_path, name)
 
@@ -83,6 +84,8 @@ def run_MaxInstPower(folder_path, num_mice, start_cutoff=50, end_cutoff=215, bas
                     print("boop")
 
             q=q+1
+        else: 
+            print("skipped "+name)
     # np.savetxt("name.csv", outputs, delimiter=",", fmt='%s')
 
     for index, result in enumerate(outputs):

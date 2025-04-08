@@ -66,10 +66,6 @@ def run_MaxInstPower(folder_path,start_cutoff=50, end_cutoff=215, baseline_cutof
             for f in os.listdir(mouse_files):
                 if f.lower().endswith(".xlsx") or f.lower().endswith(".xls"):
                     excel_files.append(os.path.join(mouse_files, f))
-        files = os.listdir(mouse_files)
-        print("Files in mouse_files (", mouse_files, ") are:")
-        for f in files:
-            print(f)
 
         if excel_files:
             excel_path = pd.read_excel(excel_files[0], sheet_name=0, header=None)
@@ -77,18 +73,13 @@ def run_MaxInstPower(folder_path,start_cutoff=50, end_cutoff=215, baseline_cutof
         else:
             print("No Excel files found in "+mouse_files)
 
-        # sample_file = [f for f in os.listdir(filename) if len(filename) >= 22 and filename[18:21] == "149"]
-
         for f in os.listdir(mouse_files):
-            if len(f) >= 22 and f[18:21] == "149":
-                before_149 = os.path.join(mouse_files, f.split("149")[0])
-                after_149 = f.split("149")[1]
-
-                for i in range(0,150): 
-                    act = MaxInstPower(before_149+str(i)+after_149)/e
-                    outputs[q].append(act)
-            else:
-                print("No 149 file found in "+mouse_files)
+            if not (f.lower().endswith(".xlsx") or f.lower().endswith(".xls")):
+                ddf_files = os.path.join(mouse_files, f)
+                act = MaxInstPower(ddf_files)/e
+                outputs[q].append(act)
+            else: 
+                print("boop")
 
         q=q+1
     # np.savetxt("name.csv", outputs, delimiter=",", fmt='%s')

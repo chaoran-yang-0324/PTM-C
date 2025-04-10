@@ -86,7 +86,7 @@ def run_MaxInstPower(folder_path, start_cutoff=50, end_cutoff=215, baseline_cuto
                 if f.lower().endswith(".xlsx") or f.lower().endswith(".xls"):
                     print("skipped Excel file "+f+" in "+sorted_files)
                 else: 
-                    ddf_files = os.path.join(mouse_files, f)
+                    ddf_files = os.path.join(sorted_files, f)
                     act = MaxInstPower(ddf_files)/e
                     outputs[q].append(act)             
             q=q+1
@@ -174,6 +174,8 @@ baseline_cutoff = st.number_input("Baseline Cutoff:", min_value=0, value=45, ste
 parameter_instructions = """
 (Generally, there's no need to adjust these parameters!)
 """
+
+st.code(parameter_instructions, language='text')
 
 if st.button("Run Analysis"):
     fig = run_MaxInstPower(unzip_folder,start_cutoff,end_cutoff,baseline_cutoff)

@@ -51,7 +51,7 @@ def run_MaxInstPower(folder_path, start_cutoff=50, end_cutoff=215, baseline_cuto
 
     # sorted_files = sorted(files, key=natural_sort_key)
 
-    num_folders = len(os.listdir(folder_path))
+    num_folders = len(os.listdir(folder_path))-1
 
     outputs = []
     for _ in range(num_folders):

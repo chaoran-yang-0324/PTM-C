@@ -84,9 +84,9 @@ def run_MaxInstPower(folder_path, start_cutoff=50, end_cutoff=215, baseline_cuto
             sorted_files = sorted(os.listdir(mouse_files), key=natural_sort_key)
             for f in sorted_files:
                 if f.lower().endswith(".xlsx") or f.lower().endswith(".xls"):
-                    print("skipped Excel file "+f+" in "+str(sorted_files))
+                    print("skipped Excel file "+f+" in "+mouse_files)
                 else: 
-                    ddf_files = os.path.join(sorted_files, f)
+                    ddf_files = os.path.join(mouse_files, f)
                     act = MaxInstPower(ddf_files)/e
                     outputs[q].append(act)             
             q=q+1

@@ -180,7 +180,7 @@ if uploaded_zip:
 start_cutoff = st.number_input("Start Cutoff:", min_value=0, value=50, step=1)
 end_cutoff = st.number_input("End Cutoff:", min_value=start_cutoff+1, value=215, step=1)
 baseline_cutoff = st.number_input("Baseline Cutoff:", min_value=0, value=45, step=1)
-jump_threshold = st.number_input("Jump Threshold:", min_value=0, value=0.025, step=0.001)
+jump_threshold = st.number_input("Jump Threshold:", min_value=0.0, value=0.025, step=0.001)
 
 parameter_instructions = """
 (Generally, there's no need to adjust these parameters!)

@@ -23,7 +23,7 @@ def natural_sort_key(s):
 # In[8]:
 
 
-def run_IsotonicWork(folder_path, start_cutoff=50, end_cutoff_set=(240,210), baseline_cutoff=45, jump_threshold = 0.025):
+def run_IsotonicWork(folder_path, start_cutoff=50, end_cutoff_set=(240,210), baseline_cutoff=45, jump_threshold_set=(0.025,0.004)):
 
     def IsotonicWork(file_path,end_cutoff_set,jump_threshold_set):
         df = pd.read_csv(file_path, delimiter='\t',skiprows=31, usecols=[0, 1, 2])
@@ -115,7 +115,7 @@ def run_IsotonicWork(folder_path, start_cutoff=50, end_cutoff_set=(240,210), bas
                     print("skipped Excel file "+f+" in "+mouse_files)
                 else: 
                     ddf_files = os.path.join(mouse_files, f)
-                    act = IsotonicWork(ddf_files)/e
+                    act = IsotonicWork(ddf_files,end_cutoff_set,jump_threshold_set)/e
                     outputs[q].append(act)             
             q=q+1
         else: 
@@ -196,9 +196,24 @@ if uploaded_zip:
         # st.write(filename)
 
 start_cutoff = st.number_input("Start Cutoff:", min_value=0, value=50, step=1)
-end_cutoff = st.number_input("End Cutoff:", min_value=start_cutoff+1, value=215, step=1)
+
+col11, col12 = st.columns(2)
+with col11:
+    end_cutoff_11 = st.number_input("End Cutoff 1", min_value=0, value=240, step=1)
+with col12:
+    end_cutoff_12 = st.number_input("End Cutoff 2", min_value=0, value=210, step=1)
+
+end_cutoff_set = (end_cutoff_11, end_cutoff_12)
+
 baseline_cutoff = st.number_input("Baseline Cutoff:", min_value=0, value=45, step=1)
-jump_threshold = st.number_input("Jump Threshold:", min_value=0.0, value=0.025, step=0.001)
+
+col21, col22 = st.columns(2)
+with col21:
+    jump_threshold_21 = st.number_input("Jump Threshold 1", min_value=0.0, value=0.025, step=0.001)
+with col22:
+    jump_threshold_22 = st.number_input("Jump Threshold 2", min_value=0.0, value=0.004, step=0.001)
+
+jump_threshold_set = (jump_threshold_21, jump_threshold_22)
 
 parameter_instructions = """
 (Generally, there's no need to adjust these parameters!)
@@ -208,7 +223,7 @@ st.code(parameter_instructions, language='text')
 
 if st.button("Run Analysis"):
     st.write("Calculating...")
-    fig,csv_output = run_IsotonicWork(unzip_folder,start_cutoff,end_cutoff,baseline_cutoff,jump_threshold)
+    fig,csv_output = run_IsotonicWork(unzip_folder,start_cutoff,end_cutoff_set,baseline_cutoff,jump_threshold)
     st.write("Graphing...")
     st.pyplot(fig)
 

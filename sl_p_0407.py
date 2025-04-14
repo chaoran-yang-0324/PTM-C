@@ -192,5 +192,4 @@ if st.button("Run Analysis"):
             data=csv,
             file_name=csv_name,
             mime='text/csv')
-    st.pyplot(fig)
 

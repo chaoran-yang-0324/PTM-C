@@ -442,7 +442,7 @@ if uploaded_zip:
     # for filename in os.listdir(unzip_folder):
         # st.write(filename)
 
-mass_kg = st.number_input("Mass (kg):", min_value=0, value=1, step=0.001)
+mass_kg = st.number_input("Mass (kg):", min_value=0.0, value=1.0, step=0.001)
 
 if st.button("Run Analysis"):
     st.write("Calculating...")

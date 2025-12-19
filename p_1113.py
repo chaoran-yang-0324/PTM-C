@@ -398,7 +398,7 @@ if uploaded_zip:
     mass_kg = []
 
     # You can now loop through the contents of the folder
-    for i, filename in os.listdir(unzip_folder):
+    for i, filename in enumerate(os.listdir(unzip_folder)):
         mass_kg[i] = st.number_input("Mass (kg):", min_value=0.0, value=1.0, step=0.001) 
         # check if mass is actually in kg
 

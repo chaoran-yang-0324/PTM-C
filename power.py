@@ -58,43 +58,60 @@ def parse_dmc_file(file_path: str) -> dict[str, np.ndarray]:
     offsets: List[float] = []
 
     i = 0
+    prot_skiprows = None  # row index where "Protocol Array" line occurs
+
     while i < len(lines):
         line = lines[i].strip()
 
-        # Locate data marker
-        if line.startswith("Test Data in Volts"):
-            data_marker_idx = i
-            prot_array = pd.read_csv(
-                            file_path,
-                            delimiter="\t",
-                            skiprows=prot_skiprows,
-                            nrows= data_marker_idx - skiprows,
-                            engine="python"
-                        )
-            j = 0
-            while j < data_marker_idx - skiprows: 
-                if prot_array[j,1] == "Stimulus-Tetanus":
-                    initial_baseline_end = prot_array[j,0]
-                    print("(cy) initial baseline end")
-                    print(initial_baseline_end)
-            break
-
         # Sample frequency
         if line.startswith("Sample Frequency"):
-            # e.g. "Sample Frequency (Hz): 1000"
             try:
                 sample_freq_hz = float(line.split(":")[1].strip())
             except (IndexError, ValueError):
                 raise ValueError(f"Could not parse sample frequency in {file_path}")
-            
+            i += 1
+            continue
+
+        # Protocol Array start
         if line.startswith("Protocol Array"):
             prot_skiprows = i
+            i += 1
             continue
+
+        # Locate data marker (end of protocol section)
+        if line.startswith("Test Data in Volts"):
+            data_marker_idx = i
+
+            if prot_skiprows is None:
+                raise ValueError(f'Found "Test Data in Volts" before "Protocol Array" in {file_path}')
+
+            # Assume protocol table begins on the next line after "Protocol Array"
+            protocol_start = prot_skiprows + 1
+            protocol_nrows = data_marker_idx - protocol_start
+            if protocol_nrows <= 0:
+                raise ValueError(f"No protocol rows found in {file_path}")
+
+            prot_df = pd.read_csv(
+                file_path,
+                delimiter="\t",
+                skiprows=protocol_start,
+                nrows=protocol_nrows,
+                engine="python",
+                header=None,
+            )
+
+            initial_baseline_end = None
+            for j in range(len(prot_df)):
+                if str(prot_df.iloc[j, 1]).strip() == "Stimulus-Tetanus":
+                    initial_baseline_end = prot_df.iloc[j, 0]
+                    print("(cy) initial baseline end")
+                    print(initial_baseline_end)
+                    break
+
+            break  # stop scanning lines once we've processed protocol + marker
 
         # Calibration block
         if line.startswith("Channel"):
-            # Format:
-            # Channel <tab> AI0 AI1 ... AO0 AO1
             channel_names = lines[i].strip().split("\t")[1:]
             units = lines[i + 1].strip().split("\t")[1:]
             scales = [float(x) for x in lines[i + 2].strip().split("\t")[1:]]

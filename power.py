@@ -3,12 +3,13 @@ power.py
 
 Description: Process all animals in a folder, compute normalized maximum instantaneous 
 power for each contraction, and return a figure plus the raw results.
+ - fixed contraction detector
 """
 
 __author__ = "Chaoran Yang"
-__version__ = "2.0"
+__version__ = "2.1"
 __email__ = "cy197@duke.edu"
-__date__ = "2025-11-13"
+__date__ = "2025-12-25"
 
 import os
 import re
@@ -44,7 +45,7 @@ def parse_dmc_file(file_path: str) -> dict[str, np.ndarray]:
       'raw_df'      : full pandas DataFrame of the test data
     """
     
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding="latin-1") as f:
         lines = f.readlines()
 
     data_marker_idx = None
@@ -63,6 +64,19 @@ def parse_dmc_file(file_path: str) -> dict[str, np.ndarray]:
         # Locate data marker
         if line.startswith("Test Data in Volts"):
             data_marker_idx = i
+            prot_array = pd.read_csv(
+                            file_path,
+                            delimiter="\t",
+                            skiprows=prot_skiprows,
+                            nrows= data_marker_idx - skiprows,
+                            engine="python"
+                        )
+            j = 0
+            while j < data_marker_idx - skiprows: 
+                if prot_array[j,1] == "Stimulus-Tetanus":
+                    initial_baseline_end = prot_array[j,0]
+                    print("(cy) initial baseline end")
+                    print(initial_baseline_end)
             break
 
         # Sample frequency
@@ -72,6 +86,10 @@ def parse_dmc_file(file_path: str) -> dict[str, np.ndarray]:
                 sample_freq_hz = float(line.split(":")[1].strip())
             except (IndexError, ValueError):
                 raise ValueError(f"Could not parse sample frequency in {file_path}")
+            
+        if line.startswith("Protocol Array"):
+            prot_skiprows = i
+            continue
 
         # Calibration block
         if line.startswith("Channel"):
@@ -164,10 +182,11 @@ def detect_contraction_window(
     Automatically detect contraction start/end and define a baseline segment.
 
     Strategy:
-      1. Estimate an initial baseline from the first ~20% of the trace.
+      1. Read the initial baseline region from "Protocol Array."
       2. Find where |force - baseline_mean| exceeds baseline_std * threshold_std.
       3. Define the contraction as the contiguous region where this condition holds.
-      4. Define the baseline segment as the middle 60% of the pre-contraction region.
+
+    Hello future me, if this is isometric force -- your strategy should be different :)
 
     Parameters
     ----------
@@ -193,7 +212,6 @@ def detect_contraction_window(
     if n == 0:
         raise ValueError("Empty force trace.")
 
-    # Take the first 20% (at least 100 samples) as an initial baseline region
     initial_baseline_end = max(int(0.2 * n), 100)
     initial_baseline_end = min(initial_baseline_end, n)
     baseline_region = force_mN[:initial_baseline_end]
@@ -296,25 +314,15 @@ def run_max_inst_power(
     mass_kg: float,
     threshold_std: float = 5.0,
     min_duration_ms: float = 20.0
-) -> Tuple[plt.Figure, List[List[float]]]:
+) -> List[List[float]]:
     """
-    Process all animal folders under `folder_path` and compute normalized
+    Process one animal folder under `folder_path` and compute normalized
     peak instantaneous power (W/kg) for each contraction.
-
-    Assumes structure:
-      folder_path/
-        Animal1/
-          <DMC data files>   (e.g. .txt)
-        Animal2/
-          <DMC data files>
-        ...
-
-    The same mass_kg is used for all animals.
 
     Parameters
     ----------
     folder_path : str
-        Root directory containing one subfolder per animal.
+        Root directory of the one animal folder.
     mass_kg : float
         Animal mass in kilograms used to normalize peak power.
     threshold_std : float
@@ -324,63 +332,33 @@ def run_max_inst_power(
 
     Returns
     -------
-    fig : matplotlib.figure.Figure
-        Plot of normalized peak power vs. contraction index per animal.
     outputs : list[list[float]]
         Normalized peak power values (W/kg) for each contraction and animal.
     """
-    outputs: List[List[float]] = []
-    animal_labels: List[str] = []
+    animal_results: List[float] = []
 
-    items = sorted(os.listdir(folder_path), key=natural_sort_key)
+    if not os.path.isdir(folder_path):
+        raise FileNotFoundError(f"Folder does not exist: {folder_path}")
 
-    for name in items:
-        animal_dir = os.path.join(folder_path, name)
+    files = [
+        f for f in os.listdir(folder_path)
+        if f.lower().endswith(".ddf") and not f.startswith(".")
+    ]
 
-        if not os.path.isdir(animal_dir) or name.startswith("."):
-            print(f"Skipped {name}")
-            continue
+    for f in sorted(files, key=natural_sort_key):
+        data_file = os.path.join(folder_path, f)
 
-        print(f"Processing {name} ...")
+        print(f"Processing {f} ...")
 
-        animal_results: List[float] = []
+        peak_power_W = max_instantaneous_power_from_file(
+            data_file,
+            threshold_std=threshold_std,
+            min_duration_ms=min_duration_ms,
+        )
+        normalized_power = peak_power_W / mass_kg  # W/kg
+        animal_results.append(normalized_power)
 
-        for f in sorted(os.listdir(animal_dir), key=natural_sort_key):
-            data_file = os.path.join(animal_dir, f)
-
-            # Skip directories and hidden files
-            if os.path.isdir(data_file) or f.startswith("."):
-                print(f"  Skipped {f} in {animal_dir}")
-                continue
-
-            peak_power_W = max_instantaneous_power_from_file(
-                data_file,
-                threshold_std=threshold_std,
-                min_duration_ms=min_duration_ms,
-            )
-            normalized_power = peak_power_W / mass_kg  # W/kg
-            animal_results.append(normalized_power)
-
-        if not animal_results:
-            print(f"  No data files found for {name}.")
-            continue
-
-        outputs.append(animal_results)
-        animal_labels.append(name)
-
-    fig, ax = plt.subplots(figsize=(11, 8))
-
-    for idx, result in enumerate(outputs):
-        x_coord = np.arange(len(result))
-        ax.plot(x_coord, np.array(result), label=f"Folder {idx + 1}")
-
-    ax.set_xlabel("Contraction Index")
-    ax.set_ylabel("Normalized Power (W/kg)")
-    ax.set_title("Peak Power")
-    ax.legend()
-    ax.grid(True)
-
-    return fig, outputs
+    return animal_results
 
 st.title("Peak Power Analysis")
 
@@ -390,14 +368,14 @@ folder_structure = """
 The folder you upload should be in the format: 
     name_of_folder.zip
       |
-       -> curve_1
+       -> animal_1
            |
             -> ___.ddf
             -> ...
-       -> curve_2
+       -> animal_2
            |
             -> ...
-       -> curve_3
+       -> animal_3
            |
             -> ...
        -> ...
@@ -438,16 +416,37 @@ if uploaded_zip:
     sorted_folder_names = sorted(os.listdir(unzip_folder), key=natural_sort_key)
     st.write(sorted_folder_names)  # Display contents
 
-    # You can now loop through the contents of the folder
-    # for filename in os.listdir(unzip_folder):
-        # st.write(filename)
+    mass_g: List[float] = []
 
-mass_kg = st.number_input("Mass (kg):", min_value=0, value=1, step=0.001)
+    for i, filename in enumerate(os.listdir(unzip_folder)):
+        value = st.number_input(f"{i} Mass (g):", min_value=0.0, value=1.0, step=0.00001) 
+        mass_g.append(value)
+
+    threshold_std = st.number_input("Threshold:",min_value=0.0, value=5.0,step=0.1)
+    min_duration_ms = st.number_input("Minimum Duration:",min_value=0, value=20, step=1)
 
 if st.button("Run Analysis"):
     st.write("Calculating...")
-    fig, csv_output = run_max_inst_power("path/to/root_folder", mass_kg=mass_kg)
+    csv_output = []
+    for i, filename in enumerate(os.listdir(unzip_folder)): 
+        run_path = os.path.join(unzip_folder,filename)
+        value = run_max_inst_power(run_path, mass_kg=mass_g[i]*0.001,
+                                   threshold_std=threshold_std,min_duration_ms=min_duration_ms)
+        csv_output.append(value)
     st.write("Graphing...")
+
+    fig, ax = plt.subplots(figsize=(11, 8))
+
+    for idx, result in enumerate(csv_output):
+        x_coord = np.arange(len(result))
+        ax.plot(x_coord, np.array(result), label=f"Folder {idx + 1}")
+
+    ax.set_xlabel("Contraction Index")
+    ax.set_ylabel("Normalized Power (W/kg)")
+    ax.set_title("Peak Power")
+    ax.legend()
+    ax.grid(True)
+
     st.pyplot(fig)
 
     now = datetime.now()
@@ -461,3 +460,5 @@ if st.button("Run Analysis"):
             file_name=csv_name,
             mime='text/csv')
 
+# add the option to save mass data
+# add the option to upload mass data (from previous generation)

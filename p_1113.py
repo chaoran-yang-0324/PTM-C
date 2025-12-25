@@ -322,13 +322,13 @@ def run_max_inst_power(
     if not os.path.isdir(folder_path):
         raise FileNotFoundError(f"Folder does not exist: {folder_path}")
 
-    for f in sorted(os.listdir(folder_path), key=natural_sort_key):
-        data_file = os.path.join(folder_path, f)
+    files = [
+        f for f in os.listdir(folder_path)
+        if f.lower().endswith(".ddf") and not f.startswith(".")
+    ]
 
-        # Skip directories and hidden files
-        if os.path.isdir(data_file) or f.startswith("."):
-            print(f"  Skipped {f} in {folder_path}")
-            continue
+    for f in sorted(files, key=natural_sort_key):
+        data_file = os.path.join(folder_path, f)
 
         print(f"Processing {f} ...")
 

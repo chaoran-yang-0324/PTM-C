@@ -44,7 +44,7 @@ def parse_dmc_file(file_path: str) -> dict[str, np.ndarray]:
       'raw_df'      : full pandas DataFrame of the test data
     """
     
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding="latin-1") as f:
         lines = f.readlines()
 
     data_marker_idx = None

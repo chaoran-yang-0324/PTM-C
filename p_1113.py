@@ -319,6 +319,9 @@ def run_max_inst_power(
     """
     animal_results: List[float] = []
 
+    if not os.path.isdir(folder_path):
+        raise FileNotFoundError(f"Folder does not exist: {folder_path}")
+
     for f in sorted(os.listdir(folder_path), key=natural_sort_key):
         data_file = os.path.join(folder_path, f)
 
@@ -395,18 +398,18 @@ if uploaded_zip:
     sorted_folder_names = sorted(os.listdir(unzip_folder), key=natural_sort_key)
     st.write(sorted_folder_names)  # Display contents
 
-    mass_kg: List[float] = []
+    mass_g: List[float] = []
 
     for i, filename in enumerate(os.listdir(unzip_folder)):
-        value = st.number_input(f"{i} Mass (kg):", min_value=0.0, value=1.0, step=0.001) 
-        mass_kg.append(value)
+        value = st.number_input(f"{i} Mass (g):", min_value=0.0, value=1.0, step=0.00001) 
+        mass_g.append(value)
         # check if mass is actually in kg
 
 if st.button("Run Analysis"):
     st.write("Calculating...")
     csv_output = []
     for i, filename in enumerate(os.listdir(unzip_folder)): 
-        value = run_max_inst_power(filename, mass_kg=mass_kg[i])
+        value = run_max_inst_power(filename, mass_kg=mass_g[i]*0.001)
         csv_output.append(value)
     st.write("Graphing...")
 

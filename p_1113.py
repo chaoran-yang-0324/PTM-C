@@ -403,14 +403,17 @@ if uploaded_zip:
     for i, filename in enumerate(os.listdir(unzip_folder)):
         value = st.number_input(f"{i} Mass (g):", min_value=0.0, value=1.0, step=0.00001) 
         mass_g.append(value)
-        # check if mass is actually in kg
+
+    threshold_std = st.number_input("Threshold:",min_value=0.0, value=5.0,step=0.1)
+    min_duration_ms = st.number_input("Minimum Duration:",min_value=0, value=20, step=1)
 
 if st.button("Run Analysis"):
     st.write("Calculating...")
     csv_output = []
     for i, filename in enumerate(os.listdir(unzip_folder)): 
         run_path = os.path.join(unzip_folder,filename)
-        value = run_max_inst_power(run_path, mass_kg=mass_g[i]*0.001)
+        value = run_max_inst_power(run_path, mass_kg=mass_g[i]*0.001,
+                                   threshold_std=threshold_std,min_duration_ms=min_duration_ms)
         csv_output.append(value)
     st.write("Graphing...")
 

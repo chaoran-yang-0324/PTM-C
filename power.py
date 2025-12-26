@@ -309,11 +309,7 @@ def run_max_inst_power(
 
         print(f"Processing {f} ...")
 
-        peak_power_W = max_instantaneous_power_from_file(
-            data_file,
-            threshold_std=threshold_std,
-            min_duration_ms=min_duration_ms,
-        )
+        peak_power_W = max_instantaneous_power_from_file(data_file)
         normalized_power = peak_power_W / mass_kg  # W/kg
         animal_results.append(normalized_power)
 

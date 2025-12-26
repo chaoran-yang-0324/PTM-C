@@ -103,12 +103,12 @@ def parse_dmc_file(file_path: str) -> dict[str, np.ndarray]:
             initial_baseline_end = None
             for j in range(len(prot_df)):
                 if str(prot_df.iloc[j, 1]).strip() == "Stimulus-Tetanus":
-                    initial_baseline_end = prot_df.iloc[j, 0]
+                    initial_baseline_end = prot_df.iloc[j, 0]*sample_freq_hz
                     print("(cy) initial baseline end")
                     print(initial_baseline_end)
                     break
 
-            break  # stop scanning lines once we've processed protocol + marker
+            break
 
         # Calibration block
         if line.startswith("Channel"):
@@ -182,57 +182,7 @@ def parse_dmc_file(file_path: str) -> dict[str, np.ndarray]:
     sample_indices = np.arange(num_samples, dtype=float)
     time_s = sample_indices / sample_freq_hz
 
-    return {
-        "time": time_s,
-        "length_mm": length_mm,
-        "force_mN": force_mN,
-        "raw_df": df,
-    }
-
-def detect_contraction_window(
-    force_mN: np.ndarray,
-    fs_hz: float,
-    threshold_std: float = 5.0,
-    min_duration_ms: float = 20.0
-) -> tuple[int, int, slice]:
-    """
-    Automatically detect contraction start/end and define a baseline segment.
-
-    Strategy:
-      1. Read the initial baseline region from "Protocol Array."
-      2. Find where |force - baseline_mean| exceeds baseline_std * threshold_std.
-      3. Define the contraction as the contiguous region where this condition holds.
-
-    Hello future me, if this is isometric force -- your strategy should be different :)
-
-    Parameters
-    ----------
-    force_mN : np.ndarray
-        Force trace in mN.
-    fs_hz : float
-        Sample frequency in Hz.
-    threshold_std : float
-        Multiplier on baseline standard deviation to define onset.
-    min_duration_ms : float
-        Minimal contraction duration to avoid false positives.
-
-    Returns
-    -------
-    start_idx : int
-        Index where contraction begins.
-    end_idx : int
-        Index where contraction ends.
-    baseline_slice : slice
-        Slice object selecting the baseline region (pre-contraction).
-    """
-    n = len(force_mN)
-    if n == 0:
-        raise ValueError("Empty force trace.")
-
-    initial_baseline_end = max(int(0.2 * n), 100)
-    initial_baseline_end = min(initial_baseline_end, n)
     baseline_region = force_mN[:initial_baseline_end]
-
     baseline_mean = float(np.mean(baseline_region))
     baseline_std = float(np.std(baseline_region))
 
@@ -244,14 +194,14 @@ def detect_contraction_window(
     threshold = threshold_std * baseline_std
     active_mask = deviation > threshold
 
-    min_samples = int((min_duration_ms / 1000.0) * fs_hz)
+    min_samples = int((min_duration_ms / 1000.0) * sample_freq_hz)
     if min_samples < 1:
         min_samples = 1
 
     # Find the first index where we have a contiguous run of 'min_samples' active points
     start_idx = None
     i = 0
-    while i < n - min_samples:
+    while i < num_samples - min_samples:
         if np.all(active_mask[i:i + min_samples]):
             start_idx = i
             break
@@ -264,10 +214,6 @@ def detect_contraction_window(
     active_indices = np.where(active_mask)[0]
     end_idx = active_indices[active_indices >= start_idx].max()
 
-    # Define a baseline slice: middle 60% of the pre-contraction region
-    if start_idx < 5:
-        raise ValueError("Contraction starts too early; not enough baseline region.")
-
     pre_region_len = start_idx
     baseline_start = int(0.2 * pre_region_len)
     baseline_end = int(0.8 * pre_region_len)
@@ -277,14 +223,17 @@ def detect_contraction_window(
 
     baseline_slice = slice(baseline_start, baseline_end)
 
-    return start_idx, end_idx, baseline_slice
+    return {
+        "time": time_s,
+        "length_mm": length_mm,
+        "force_mN": force_mN,
+        "raw_df": df,
+        "start_idx": start_idx,
+        "end_idx": end_idx,
+        "baseline_slice": baseline_slice
+    }
 
-def max_instantaneous_power_from_file(
-    file_path: str,
-    threshold_std: float = 5.0,
-    min_duration_ms: float = 20.0,
-    flip_length_sign: bool = True
-) -> float:
+def max_instantaneous_power_from_file(file_path: str) -> float:
     """
     Compute the maximum instantaneous power for a single file.
 
@@ -298,16 +247,9 @@ def max_instantaneous_power_from_file(
     time = parsed["time"]
     length_mm = parsed["length_mm"]
     force_mN = parsed["force_mN"]
-
-    # Optionally flip length so shortening is positive
-    if flip_length_sign:
-        length_mm = -length_mm
-
-    fs_hz = 1.0 / np.mean(np.diff(time))
-
-    start_idx, end_idx, baseline_slice = detect_contraction_window(
-        force_mN, fs_hz, threshold_std=threshold_std, min_duration_ms=min_duration_ms
-    )
+    start_idx = parsed["start_idx"]
+    end_idx = parsed["end_idx"]
+    baseline_slice = parsed["baseline_slice"]
 
     # Baseline correction using the pre-contraction middle segment
     length_baseline = float(np.mean(length_mm[baseline_slice]))
